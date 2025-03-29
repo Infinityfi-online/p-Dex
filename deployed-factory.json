@@ -1,4 +1,4 @@
 {
-  "networkName": "localhost",
-  "factory": "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+  "networkName": "devnet",
+  "factory": "0x2184E4A7da55556266579d99AC5e1f9da1ec189e"
 }

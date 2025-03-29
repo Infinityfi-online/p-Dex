@@ -1,7 +1,7 @@
 {
-  "networkName": "localhost",
+  "networkName": "devnet",
   "tokens": {
-    "token0": "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512",
-    "token1": "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0"
+    "token0": "0x1f28618A8334093240c1BA4847c517c8eDf687c4",
+    "token1": "0x8A952a150d1B910Ef8185Da81c6605ab6Dc8A9e1"
   }
 }

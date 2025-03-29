@@ -29,6 +29,7 @@
   },
   "dependencies": {
     "@types/react": "^19.0.12",
+    "dotenv": "^16.4.7",
     "react": "^19.1.0"
   },
   "devDependencies": {

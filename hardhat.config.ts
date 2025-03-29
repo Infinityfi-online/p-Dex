@@ -2,11 +2,19 @@ import 'hardhat-typechain'
 import '@nomiclabs/hardhat-ethers'
 import '@nomiclabs/hardhat-waffle'
 import '@nomiclabs/hardhat-etherscan'
+import * as dotenv from "dotenv";
+
+dotenv.config();
 
 export default {
   networks: {
     hardhat: {
       allowUnlimitedContractSize: false,
+    },
+    devnet: {
+      url: "https://devnet.dplabs-internal.com/",
+      chainId: 50002,
+      accounts: [process.env.PRIVATE_KEY ?? (() => { throw new Error("Please set your PRIVATE_KEY in .env file") })()],
     },
     mainnet: {
       url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
