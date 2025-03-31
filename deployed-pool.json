@@ -1,18 +1,18 @@
 {
   "networkName": "devnet",
-  "factory": "0x2184E4A7da55556266579d99AC5e1f9da1ec189e",
+  "factory": "0x5c0f0d410CB441BdeB0851a58c25D76C99BE6C6B",
   "tokens": {
     "token0": {
-      "address": "0x1f28618A8334093240c1BA4847c517c8eDf687c4",
-      "sortedAddress": "0x1f28618A8334093240c1BA4847c517c8eDf687c4"
+      "address": "0x1484b0A9DFD5dF714EE437a0894a2f3705E46f70",
+      "sortedAddress": "0x1484b0A9DFD5dF714EE437a0894a2f3705E46f70"
     },
     "token1": {
-      "address": "0x8A952a150d1B910Ef8185Da81c6605ab6Dc8A9e1",
-      "sortedAddress": "0x8A952a150d1B910Ef8185Da81c6605ab6Dc8A9e1"
+      "address": "0x3851A5584706feB7D33B0d18Bd86201B708434Ed",
+      "sortedAddress": "0x3851A5584706feB7D33B0d18Bd86201B708434Ed"
     }
   },
   "pool": {
-    "address": "0x4Df991747110105E0d80DAa1167dB90865086766",
+    "address": "0x6cfCC7068b0d44cC00B5952e8944c967e280D761",
     "fee": 3000,
     "initialSqrtPriceX96": "79228162514264337593543950336"
   }
