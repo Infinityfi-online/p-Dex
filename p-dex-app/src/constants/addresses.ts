@@ -1,32 +1,35 @@
 // Contract addresses and configurations
 
 // Factory contract address (from Hardhat logs)
-export const FACTORY_ADDRESS = "0x5fbdb2315678afecb367f032d93f642f64180aa3";
+export const FACTORY_ADDRESS = "0x5c0f0d410CB441BdeB0851a58c25D76C99BE6C6B";
+
+// SwapHelper contract address (from Hardhat logs)
+export const SWAP_HELPER_ADDRESS = "0x2181293267760781849981138241801838965648";
 
 // Mock tokens for testing (from Hardhat logs)
 export const mockTokens = [
   {
     name: "Token0",
     symbol: "TK0",
-    address: "0xe7f1725e7734ce288f8367e1bb143e90bb3f0512",
+    address: "0xbBaF9ad69510623C2a8152B68cF70DA102eD186B",
     decimals: 18
   },
   {
     name: "Token1",
     symbol: "TK1",
-    address: "0x9fe46736679d2d9a65f0992f2272de9f3c7fa6e0",
+    address: "0x78A4C5b3aA0b285b6aAa7895A9DB2e69a6a12Be2",
     decimals: 18
   }
 ];
 
 // Network configuration
 export const NETWORK_CONFIG = {
-  chainId: 31337, // Hardhat's default chain ID
-  chainName: "Hardhat Local",
-  rpcUrls: ["http://localhost:8545"],
+  chainId: 50002, // Hardhat's default chain ID
+  chainName: "pharos devnet",
+  rpcUrls: ["https://devnet.dplabs-internal.com"],
   nativeCurrency: {
-    name: "Ethereum",
-    symbol: "ETH",
+    name: "PHAROS",
+    symbol: "PHA",
     decimals: 18
   }
 };

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "p-Dex - Uniswap V3 Interface",
-  description: "Your personal Uniswap V3 decentralized exchange",
+  title: "p-Dex - Pharos Devnet DEX",
+  description: "Your personal Uniswap V3 decentralized exchange on Pharos devnet",
 };
 
 export default function RootLayout({

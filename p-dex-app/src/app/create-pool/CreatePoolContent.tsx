@@ -5,9 +5,10 @@ import { ethers } from 'ethers';
 import { useWeb3 } from '../../context/Web3Context';
 import TokenSelector from '../../components/TokenSelector';
 import { mockTokens, FEE_OPTIONS } from '../../constants/addresses';
+import { POOL_ABI } from '../../constants/abis';
 
 export default function CreatePoolContent() {
-  const { factoryContract, isConnected, connectWallet, account } = useWeb3();
+  const { factoryContract, isConnected, connectWallet, account, signer } = useWeb3();
   const [token0, setToken0] = useState<any>(null);
   const [token1, setToken1] = useState<any>(null);
   const [fee, setFee] = useState<number>(3000); // Default 0.3%
@@ -69,10 +70,21 @@ export default function CreatePoolContent() {
       let tokenB = token1;
       let invertPrice = false;
 
+      // Compare addresses lexicographically
       if (tokenA.address.toLowerCase() > tokenB.address.toLowerCase()) {
+        // Swap tokens if token0's address is greater than token1's
         tokenA = token1;
         tokenB = token0;
         invertPrice = true;
+      }
+      
+      // Double-check the ordering to ensure tokenA has the lower address
+      console.log(`Token ordering: ${tokenA.address.toLowerCase()} < ${tokenB.address.toLowerCase()}`);
+      console.log(`Token A: ${tokenA.symbol}, Token B: ${tokenB.symbol}`);
+      
+      // Verify the ordering is correct
+      if (tokenA.address.toLowerCase() > tokenB.address.toLowerCase()) {
+        throw new Error('Token ordering is incorrect. Please contact support.');
       }
 
       // Create pool
@@ -110,7 +122,8 @@ export default function CreatePoolContent() {
       const tx = await factoryContract.createPool(
         tokenA.address,
         tokenB.address,
-        fee
+        fee,
+        { gasLimit: 5000000 }
       );
       
       setDebugInfo(`Transaction sent: ${tx.hash}`);
@@ -137,10 +150,46 @@ export default function CreatePoolContent() {
         
         setDebugInfo(`New pool address: ${poolAddress}`);
         
-        setMessage({
-          text: `Pool created successfully at ${poolAddress}`,
-          type: 'success'
-        });
+        // Initialize the pool with the initial price
+        try {
+          const poolContract = new ethers.Contract(poolAddress, POOL_ABI, signer as ethers.Signer);
+          
+          // Calculate sqrtPriceX96 based on initialPrice
+          // For price = 1, sqrtPriceX96 = sqrt(1) * 2^96 = 2^96
+          // For other prices, sqrtPriceX96 = sqrt(price) * 2^96
+          let price = parseFloat(initialPrice);
+          if (invertPrice) {
+            price = 1 / price;
+          }
+          
+          const sqrtPrice = Math.sqrt(price);
+          const sqrtPriceX96 = ethers.BigNumber.from(2).pow(96).mul(
+            ethers.utils.parseUnits(sqrtPrice.toFixed(18), 18)
+          ).div(ethers.utils.parseUnits('1', 18));
+          
+          setDebugInfo(`Initializing pool with sqrtPriceX96: ${sqrtPriceX96.toString()}`);
+          
+          const initTx = await poolContract.initialize(sqrtPriceX96);
+          setMessage({
+            text: `Initializing pool... Transaction: ${initTx.hash}`,
+            type: 'info'
+          });
+          
+          await initTx.wait();
+          
+          setMessage({
+            text: `Pool created and initialized successfully at ${poolAddress}`,
+            type: 'success'
+          });
+        } catch (initError: any) {
+          console.error("Error initializing pool:", initError);
+          setDebugInfo(`Initialization error: ${initError.message}`);
+          
+          setMessage({
+            text: `Pool created at ${poolAddress} but initialization failed: ${initError.message}`,
+            type: 'warning'
+          });
+        }
       } catch (poolError: any) {
         console.error("Error getting new pool address:", poolError);
         setDebugInfo(`Error getting pool address: ${poolError.message}`);
@@ -244,4 +293,4 @@ export default function CreatePoolContent() {
       </div>
     </div>
   );
-} 
+}

@@ -3,13 +3,14 @@
 import React from 'react';
 import Link from 'next/link';
 import { useWeb3 } from '../context/Web3Context';
+import { NETWORK_CONFIG } from '../constants/addresses';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
 export default function Layout({ children }: LayoutProps) {
-  const { isConnected, connectWallet, disconnectWallet, account, connectionError } = useWeb3();
+  const { isConnected, connectWallet, disconnectWallet, account, connectionError, networkId, addPharosNetwork } = useWeb3();
 
   const truncateAddress = (address: string) => {
     return `${address.substring(0, 6)}...${address.substring(address.length - 4)}`;
@@ -44,6 +45,24 @@ export default function Layout({ children }: LayoutProps) {
                   <span className="px-3 py-2 bg-gray-800">
                     {account && truncateAddress(account)}
                   </span>
+                  {networkId && networkId !== NETWORK_CONFIG.chainId && (
+                    <>
+                      <span className="px-3 py-2 bg-yellow-600 text-black font-medium">
+                        Wrong Network
+                      </span>
+                      <button
+                        onClick={addPharosNetwork}
+                        className="px-3 py-2 bg-blue-600 text-white font-medium"
+                      >
+                        Add {NETWORK_CONFIG.chainName}
+                      </button>
+                    </>
+                  )}
+                  {networkId && networkId === NETWORK_CONFIG.chainId && (
+                    <span className="px-3 py-2 bg-green-600 text-white font-medium">
+                      {NETWORK_CONFIG.chainName}
+                    </span>
+                  )}
                   <button
                     onClick={disconnectWallet}
                     className="px-3 py-2 bg-red-600"
@@ -72,6 +91,20 @@ export default function Layout({ children }: LayoutProps) {
         </div>
       )}
       
+      {isConnected && networkId && networkId !== NETWORK_CONFIG.chainId && (
+        <div className="bg-yellow-600 text-black p-3">
+          <div className="max-w-7xl mx-auto px-4 font-medium flex justify-between items-center">
+            <span>You are connected to the wrong network. Please switch to {NETWORK_CONFIG.chainName} to use this application.</span>
+            <button
+              onClick={addPharosNetwork}
+              className="px-3 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700"
+            >
+              Add {NETWORK_CONFIG.chainName}
+            </button>
+          </div>
+        </div>
+      )}
+      
       <main className="flex-grow">
         <div className="max-w-7xl mx-auto py-6 px-4">
           {children}
@@ -80,9 +113,10 @@ export default function Layout({ children }: LayoutProps) {
       
       <footer className="bg-black py-6">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p>p-Dex - A Uniswap V3 Interface</p>
+          <p>p-Dex - A Uniswap V3 Interface for Pharos Devnet</p>
+          <p className="text-sm text-gray-500 mt-2">Chain ID: {NETWORK_CONFIG.chainId} | {NETWORK_CONFIG.chainName}</p>
         </div>
       </footer>
     </div>
   );
-} 
+}

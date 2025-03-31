@@ -2,12 +2,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { ethers } from 'ethers';
-import { useWeb3 } from '../../context/Web3Context';
+import { useWeb3, Web3Provider } from '../../context/Web3Context';
 import TokenSelector from '../../components/TokenSelector';
 import { mockTokens } from '../../constants/addresses';
 
 export default function SwapContent() {
-  const { factoryContract, isConnected, connectWallet, getPoolContract } = useWeb3();
+  const { factoryContract, isConnected, connectWallet, getPoolContract, provider } = useWeb3();
   const [tokenIn, setTokenIn] = useState<any>(null);
   const [tokenOut, setTokenOut] = useState<any>(null);
   const [amountIn, setAmountIn] = useState<string>('');
@@ -86,19 +86,28 @@ export default function SwapContent() {
     });
 
     try {
-      // TODO: Implement token swap
-      // This would involve:
-      // 1. Approving the pool to spend your tokens
-      // 2. Calling swap on the pool contract
+      // Import SwapService dynamically to avoid SSR issues
+      const { SwapService } = await import('../../services/SwapService');
+      const swapService = new SwapService(provider as ethers.providers.Web3Provider);
       
-      // For now, we'll just simulate a successful swap
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      setMessage({
-        text: `Successfully swapped ${amountIn} ${tokenIn.symbol} for approximately ${amountOut} ${tokenOut.symbol}`,
-        type: 'success'
+      // Execute the swap
+      const result = await swapService.executeSwap({
+        tokenIn,
+        tokenOut,
+        amountIn,
+        poolAddress,
+        slippageTolerance: 0.5, // 0.5% slippage tolerance
       });
-      setAmountIn('');
+      
+      if (result.success) {
+        setMessage({
+          text: `Successfully swapped ${result.amountIn} ${tokenIn.symbol} for ${result.amountOut} ${tokenOut.symbol}`,
+          type: 'success'
+        });
+        setAmountIn('');
+      } else {
+        throw new Error(result.error || 'Swap failed');
+      }
       
     } catch (error: any) {
       console.error('Error swapping tokens:', error);
@@ -111,11 +120,27 @@ export default function SwapContent() {
     }
   };
 
-  // Simulate calculating output amount (this would normally query the pool)
-  const calculateOutputAmount = () => {
-    if (amountIn && !isNaN(Number(amountIn)) && Number(amountIn) > 0) {
-      // Simplified calculation - in a real app, this would query the pool contract
-      setAmountOut((Number(amountIn) * 0.98).toFixed(6)); // Simulating 2% slippage
+  // Calculate output amount by querying the pool
+  const calculateOutputAmount = async () => {
+    if (amountIn && !isNaN(Number(amountIn)) && Number(amountIn) > 0 && tokenIn && tokenOut && poolAddress) {
+      try {
+        // Import SwapService dynamically to avoid SSR issues
+        const { SwapService } = await import('../../services/SwapService');
+        const swapService = new SwapService(provider as ethers.providers.Web3Provider);
+        
+        // Calculate expected output amount
+        const calculatedAmount = await swapService.calculateOutputAmount({
+          tokenIn,
+          tokenOut,
+          amountIn,
+          poolAddress
+        });
+        
+        setAmountOut(calculatedAmount);
+      } catch (error) {
+        console.error('Error calculating output amount:', error);
+        setAmountOut('0');
+      }
     } else {
       setAmountOut('0');
     }
@@ -123,8 +148,10 @@ export default function SwapContent() {
 
   // Update output amount when input amount changes
   useEffect(() => {
-    calculateOutputAmount();
-  }, [amountIn, tokenIn, tokenOut]);
+    if (poolAddress) {
+      calculateOutputAmount();
+    }
+  }, [amountIn, tokenIn, tokenOut, poolAddress]);
 
   return (
     <div className="max-w-md mx-auto">
@@ -217,4 +244,4 @@ export default function SwapContent() {
       </div>
     </div>
   );
-} 
+}

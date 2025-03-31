@@ -19,6 +19,7 @@ interface Web3ContextType {
   getPoolContract: (address: string) => ethers.Contract;
   getTokenContract: (address: string) => ethers.Contract;
   connectionError: string | null;
+  addPharosNetwork: () => Promise<void>;
 }
 
 // Create the context with default values
@@ -37,7 +38,8 @@ const Web3Context = createContext<Web3ContextType>({
   getTokenContract: () => {
     throw new Error('Web3Context not initialized');
   },
-  connectionError: null
+  connectionError: null,
+  addPharosNetwork: async () => {}
 });
 
 // Create a hook to use the context
@@ -54,54 +56,12 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
   const [web3Modal, setWeb3Modal] = useState<Web3Modal | null>(null);
   const [connectionError, setConnectionError] = useState<string | null>(null);
 
-  // Try to connect directly to Hardhat for development
+  // Initialize Web3Modal for Pharos devnet connection
   useEffect(() => {
-    const connectToHardhat = async () => {
-      try {
-        // First try to connect directly to Hardhat node for development
-        const hardhatProvider = new ethers.providers.JsonRpcProvider('http://localhost:8545');
-        const network = await hardhatProvider.getNetwork();
-        
-        if (network.chainId === 31337) {
-          console.log("Connected directly to Hardhat node");
-          
-          // Get first account for development
-          const accounts = await hardhatProvider.listAccounts();
-          const hardhatSigner = hardhatProvider.getSigner(accounts[0]);
-          
-          setProvider(hardhatProvider as unknown as ethers.providers.Web3Provider);
-          setSigner(hardhatSigner);
-          setAccount(accounts[0]);
-          setNetworkId(network.chainId);
-          setIsConnected(true);
-          
-          // Set up factory contract
-          if (FACTORY_ADDRESS) {
-            try {
-              const factory = new ethers.Contract(
-                FACTORY_ADDRESS, 
-                FACTORY_ABI, 
-                hardhatSigner
-              );
-              setFactoryContract(factory);
-              console.log("Factory contract initialized with Hardhat provider");
-            } catch (error: any) {
-              console.error("Error initializing factory contract with Hardhat:", error);
-              setConnectionError(`Factory contract error: ${error.message}`);
-            }
-          }
-        }
-      } catch (error) {
-        console.warn("Could not connect to Hardhat node directly, will use Web3Modal");
-        // Continue with Web3Modal setup
-        setupWeb3Modal();
-      }
-    };
-    
     const setupWeb3Modal = () => {
       const modal = new Web3Modal({
         cacheProvider: true,
-        network: 'hardhat',
+        network: 'custom',
         providerOptions: {}
       });
       setWeb3Modal(modal);
@@ -112,8 +72,8 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
     
-    // First try Hardhat direct connection, fall back to Web3Modal
-    connectToHardhat();
+    // Setup Web3Modal for Pharos devnet
+    setupWeb3Modal();
   }, []);
 
   // Connect wallet function
@@ -133,10 +93,45 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
       const accounts = await web3Provider.listAccounts();
       const { chainId } = await web3Provider.getNetwork();
 
+      // Check if connected to Pharos devnet
+      if (chainId !== NETWORK_CONFIG.chainId) {
+        try {
+          // Request network switch
+          await web3Provider.send('wallet_switchEthereumChain', [
+            { chainId: `0x${NETWORK_CONFIG.chainId.toString(16)}` },
+          ]);
+        } catch (switchError: any) {
+          // This error code indicates that the chain has not been added to MetaMask
+          if (switchError.code === 4902 || switchError.data?.originalError?.code === 4902) {
+            try {
+              await web3Provider.send('wallet_addEthereumChain', [
+                {
+                  chainId: `0x${NETWORK_CONFIG.chainId.toString(16)}`,
+                  chainName: NETWORK_CONFIG.chainName,
+                  rpcUrls: NETWORK_CONFIG.rpcUrls,
+                  nativeCurrency: NETWORK_CONFIG.nativeCurrency,
+                },
+              ]);
+            } catch (addError: any) {
+              setConnectionError(`Failed to add Pharos devnet to wallet: ${addError.message}`);
+              return;
+            }
+          } else {
+            setConnectionError(`Failed to switch to Pharos devnet: ${switchError.message}`);
+            return;
+          }
+        }
+        
+        // Refresh provider after network switch
+        const updatedNetwork = await web3Provider.getNetwork();
+        setNetworkId(updatedNetwork.chainId);
+      } else {
+        setNetworkId(chainId);
+      }
+
       setProvider(web3Provider);
       setSigner(web3Signer);
       setAccount(accounts[0]);
-      setNetworkId(chainId);
       setIsConnected(true);
 
       // Initialize factory contract
@@ -195,6 +190,30 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
     return new ethers.Contract(address, ERC20_ABI, signer);
   };
 
+  // Function to add Pharos devnet to wallet
+  const addPharosNetwork = async () => {
+    try {
+      if (!provider) {
+        setConnectionError('No provider available. Please connect your wallet first.');
+        return;
+      }
+
+      await provider.send('wallet_addEthereumChain', [
+        {
+          chainId: `0x${NETWORK_CONFIG.chainId.toString(16)}`,
+          chainName: NETWORK_CONFIG.chainName,
+          rpcUrls: NETWORK_CONFIG.rpcUrls,
+          nativeCurrency: NETWORK_CONFIG.nativeCurrency,
+        },
+      ]);
+
+      console.log('Pharos devnet added to wallet');
+    } catch (error: any) {
+      console.error('Error adding Pharos devnet to wallet:', error);
+      setConnectionError(`Failed to add Pharos devnet: ${error.message}`);
+    }
+  };
+
   return (
     <Web3Context.Provider
       value={{
@@ -208,10 +227,11 @@ export const Web3Provider: React.FC<{ children: React.ReactNode }> = ({ children
         disconnectWallet,
         getPoolContract,
         getTokenContract,
-        connectionError
+        connectionError,
+        addPharosNetwork
       }}
     >
       {children}
     </Web3Context.Provider>
   );
-}; 
+};

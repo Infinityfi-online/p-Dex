@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Web3Provider, useWeb3 } from "../context/Web3Context";
 import Layout from "../components/Layout";
+import { NETWORK_CONFIG } from "../constants/addresses";
 
 // This component will be wrapped with Web3Provider
 function HomeContent() {
@@ -13,11 +14,14 @@ function HomeContent() {
       <div className="max-w-7xl mx-auto px-4 py-12">
         <div className="text-center">
           <h1 className="text-4xl font-extrabold text-white sm:text-5xl sm:tracking-tight lg:text-6xl">
-            p-Dex
+            p-Dex on Pharos
           </h1>
           <p className="mt-5 max-w-xl mx-auto text-xl text-gray-300">
-            Your personal Uniswap V3 decentralized exchange
+            Your personal Uniswap V3 decentralized exchange on Pharos devnet
           </p>
+          <div className="mt-2 bg-blue-800 inline-block px-4 py-2 rounded-md">
+            <p className="text-sm font-medium">Exclusively for Pharos devnet (Chain ID: {NETWORK_CONFIG.chainId})</p>
+          </div>
 
           {!isConnected && (
             <div className="mt-8">
