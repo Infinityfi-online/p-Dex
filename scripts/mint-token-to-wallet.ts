@@ -6,7 +6,7 @@ const path = require("path");
 async function main() {
   // Define the wallet address to mint tokens to
   const targetWalletAddress = "0x4222Fd3257F7C760F07d11f0354e51BA4840Fae7";
-  const amountToMint = hre.ethers.utils.parseEther('20'); // 20 tokens with 18 decimals
+  const amountToMint = hre.ethers.utils.parseEther('200'); // 20 tokens with 18 decimals
   
   // Load the deployment information
   const tokensPath = path.join(__dirname, '../deployed-tokens.json');
